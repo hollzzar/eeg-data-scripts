@@ -120,12 +120,12 @@ for s = 1:numsubjects
     EEG = pop_epochbin(EEG, [-200.0  1200.0], 'pre');
     
     %Mark epochs with peak to peak activity greater than threshold in eye electrodes
-    %HEOG and VEOG (eye electrodes): pop_artmwppth()
+    %HEOG and VEOG
     %Custom function with different thresholds for pop_artmwppth()
     [EEG, threshold_no] = artifact_thresholds(EEG, threshold_1, threshold_2, threshold_3,...
         acce_bins, acce_accpt, acce_min);
     
-    %Mark epochs with activity above an upper and below a threshold in head channels
+    %Mark epochs with activity above/below thresholds in head channels
     EEG = pop_artextval(EEG, 'Channel',  1:32, 'Flag', [1 3],...
         'Threshold', [-100 100], 'Twindow', [-200 1200]);
     
