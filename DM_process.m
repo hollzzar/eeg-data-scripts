@@ -9,8 +9,8 @@ subject_list = erase(subject_list,'.cnt');
 %Set variables for pre-processing
 bdf = 'bdf.txt';
 acce_bins = [5,8]; %Bins that I care about the most
-acce_min = 20; %Minimum number of trials per bin that I care about
-acce_accpt = 25; %Minimum number
+acce_min = 20; %Absolute minimum number of trials per bin that I care about
+acce_accpt = 25; %Ideal minimum number of trials per bin that I care about
 
 %Set eye-blink thresholds
 threshold_1 = 55;
