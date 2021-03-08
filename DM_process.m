@@ -1,5 +1,8 @@
-%Call setup script to load eeglab and set file paths
+%% Call setup script to load eeglab and set file paths
+
 setup
+
+%% Set up variables
 
 %Create subject list
 subject_list = dir(strcat(parentfolder,'*.cnt'));
@@ -9,13 +12,15 @@ subject_list = erase(subject_list,'.cnt');
 %Set variables for pre-processing
 bdf = 'bdf.txt';
 acce_bins = [5,8]; %Bins that I care about the most
-acce_min = 20; %Absolute minimum number of trials per bin that I care about
-acce_accpt = 25; %Ideal minimum number of trials per bin that I care about
+acce_min = 20; %Minimum number of trials per bin that I care about
+acce_accpt = 25; %Minimum number
 
 %Set eye-blink thresholds
 threshold_1 = 55;
 threshold_2 = 65;
 threshold_3 = 75;
+
+%% Set up participants and channels
 
 %Only process data for new participants
 %Get list of already processed subjects
@@ -80,6 +85,8 @@ butterfly =  {'ch35 = (ch3 + ch4 + ch8 + ch9)/4 label LF'...
     'ch40 = (ch5 + ch14 + ch25)/3 label Mid'...
     'ch41 = (ch14 + ch19 + ch20 + ch25)/4 label SmallCP'};
 
+%% Get data
+
 %Loop through each subject's cnt file and pre-process
 for s = 1:numsubjects
     
@@ -113,19 +120,19 @@ for s = 1:numsubjects
         'Eventlist', [processfolder subject '_event.txt']);
     
     %Sort events into bins for analysis
-    EEG = pop_binlister(EEG, 'BDF', [parentfolder bdf], 'IndexEL',  1, 'SendEL2',...
+    EEG = pop_binlister(EEG, 'BDF', [bdffolder bdf], 'IndexEL',  1, 'SendEL2',...
         'EEG', 'Voutput', 'EEG');
     
     %Divide EEG into epochs based on bins and perform baseline correction
     EEG = pop_epochbin(EEG, [-200.0  1200.0], 'pre');
     
     %Mark epochs with peak to peak activity greater than threshold in eye electrodes
-    %HEOG and VEOG
+    %HEOG and VEOG (eye electrodes): pop_artmwppth()
     %Custom function with different thresholds for pop_artmwppth()
     [EEG, threshold_no] = artifact_thresholds(EEG, threshold_1, threshold_2, threshold_3,...
         acce_bins, acce_accpt, acce_min);
     
-    %Mark epochs with activity above/below thresholds in head channels
+    %Mark epochs with activity above an upper and below a threshold in head channels
     EEG = pop_artextval(EEG, 'Channel',  1:32, 'Flag', [1 3],...
         'Threshold', [-100 100], 'Twindow', [-200 1200]);
     
