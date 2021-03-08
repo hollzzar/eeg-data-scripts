@@ -42,20 +42,17 @@ bins = [5 8];
 %     [3 6] % could SM vs. DM
 %     [4 7] % should SM vs. DM
 electrodes = {[5 14 25 35:39]};
-% , [13:15 18:21 23:27]
+% Index 2: [13:15 18:21 23:27]
 times = {[200 400], [500 900]};
 files = {'_ean_', '_p600_'};
-% , '_cp_roi.txt'
 
 %Set counter/index variables
 num_files = length(files);
 electrode_index = {1, 1};
-% , 2
 %Electrode index 1 = Fz, Cz, Pz, LF, RF, LP, RP, CP
 %CP includes: C3, Cz, C4, CP1, CP2, P3, Pz, P4
 %Electrode index 2 = Cz, C3, C4, CP1, CP2, CP5, CP6, Pz, P3, P4, P7, P8
 time_index = {1, 2};
-% , 2
 
 %Set variables for grand mean output
 SUSE_id = readcell([SUSEpath 'SUSE.txt']);
