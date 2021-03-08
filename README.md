@@ -2,7 +2,7 @@
 
 This repository contains the scripts that I use to process EEG data for an experiment on dialectal variation in American English. 
 
-`DM_process` takes the cnt files from our Neuroscan system and processes them with the `EEGLAB` and [`ERPLAB`](https://github.com/lucklab/erplab) Matlab toolboxes for ERP analysis. This processing includes filtering, epoching, baseline correction, artifact detection/rejection, and computing averaged ERPs in each bin. 
+`DM_process` takes the cnt files from our Neuroscan system and processes them with the `EEGLAB` and [`ERPLAB`](https://github.com/lucklab/erplab) Matlab toolboxes for ERP analysis. This processing includes filtering, epoching, baseline correction, artifact detection/rejection, and computing averaged ERPs in each bin. `DM_process_half` is an adapted version of this script that separately processes the first and second halves of the experiment (based on the number of trigger codes) in order to test for adaptation effects.
 
 `artifact_thresholds` and `accepted_trials` are custom functions for `DM_process` that interate over each participant's data to find the correct eye-blink voltage threshold.
 
