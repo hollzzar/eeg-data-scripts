@@ -1,6 +1,6 @@
 %% Call setup script to load eeglab and set file paths
 
-setup
+A_setup
 
 %% Set up variables
 
@@ -11,11 +11,11 @@ subject_list = erase(subject_list,'.cnt');
 
 %Set variables for pre-processing
 bdf = 'bdf.txt';
-acce_bins = [5,8]; %Bins that I care about the most
+acce_bins = [5,8]; %Bins that I want to compare
 acce_min = 20; %Minimum number of trials per bin that I care about
 acce_accpt = 25; %Minimum number
 
-%Set eye-blink thresholds
+%Set eye-blink thresholds (microvolts)
 threshold_1 = 55;
 threshold_2 = 65;
 threshold_3 = 75;
@@ -24,7 +24,7 @@ threshold_3 = 75;
 
 %Only process data for new participants
 %Get list of already processed subjects
-current_subs = dir(strcat(halffolder,'*.erp'));
+current_subs = dir(strcat(processfolder,'*.erp'));
 num_current = length(current_subs);
 
 %Loop through each subject number to see if it's already been processed
@@ -101,12 +101,6 @@ for s = 1:numsubjects
     EEG = pop_basicfilter(EEG, 1:34, 'Boundary', 'boundary', 'Cutoff',...
         30, 'Design', 'butter', 'Filter', 'lowpass', 'Order', 4);
     
-    %Change channels for subject where amplifier wires were flipped
-    if strcmp(subject,'203')
-        chnl(1) = {'nch1 = ch30 - ( (ch17+ch22)/2 ) Label Fp1'};
-        chnl(30) = {'nch30 = ch1 - ( (ch17+ch22)/2 ) Label Oz'};
-    end
-    
     %Create/modify channels in current EEG structure
     EEG = pop_eegchanoperator(EEG, chnl, 'ErrorMsg', 'popup', 'Warning', 'on');
     
@@ -114,9 +108,10 @@ for s = 1:numsubjects
     %Look-up channel numbers for standard locations in BESA
     EEG = pop_chanedit(EEG, 'lookup', channelfolder);
     
-    %Create event list
+    %Create and save event list
     EEG = pop_creabasiceventlist(EEG , 'AlphanumericCleaning', 'on',...
-        'BoundaryNumeric', {-99}, 'BoundaryString', {'boundary'});
+        'BoundaryNumeric', {-99}, 'BoundaryString', {'boundary'},...
+        'Eventlist', [processfolder subject '_event.txt']);
     
     %Sort events into bins for analysis
     EEG = pop_binlister(EEG, 'BDF', [bdffolder bdf], 'IndexEL',  1, 'SendEL2',...
@@ -125,9 +120,9 @@ for s = 1:numsubjects
     %Divide EEG into epochs based on bins and perform baseline correction
     EEG = pop_epochbin(EEG, [-200.0  1200.0], 'pre');
     
-    %Mark epochs with peak to peak activity greater than threshold in eye electrodes
-    %HEOG and VEOG (eye electrodes): pop_artmwppth()
     %Custom function with different thresholds for pop_artmwppth()
+    %Mark epochs with peak to peak activity greater than threshold in eye 
+    %electrodes (HEOG and VEOG) with pop_artmwppth()
     [EEG, threshold_no] = artifact_thresholds(EEG, threshold_1, threshold_2, threshold_3,...
         acce_bins, acce_accpt, acce_min);
     
@@ -135,54 +130,21 @@ for s = 1:numsubjects
     EEG = pop_artextval(EEG, 'Channel',  1:32, 'Flag', [1 3],...
         'Threshold', [-100 100], 'Twindow', [-200 1200]);
     
-    %Indices for event field
-    event_half_index = find([EEG.event.epoch] == 55);
-    event_after_index = event_half_index(2) + 1;
-    event_end_index = length([EEG.event.epoch]);
+    %Save summary of artifact rejection by bin
+    EEG = pop_summary_AR_eeg_detection(EEG, [processfolder subject threshold_no 'AR_Summary.txt']);
     
-    %Indices for urevent and eventinfo fields
-    urevent_half_index = find([EEG.EVENTLIST.eventinfo.bepoch] == 55);
-    urevent_after_index = urevent_half_index + 1;
-    urevent_end_index = length([EEG.EVENTLIST.eventinfo.bepoch]);
-    
-    %Create separate EEG structs
-    EEG_first = EEG;
-    EEG_second = EEG;
-    
-    %Subset fields that are the same across datasets
-    EEG_first.trials = 55;
-    EEG_second.trials = 55;
-    EEG_first.data = EEG_first.data(:, :, 1:55);
-    EEG_second.data = EEG_second.data(:, :, 56:110);
-    EEG_first.epoch = EEG_first.epoch(:, 1:55);
-    EEG_second.epoch = EEG_second.epoch(:, 56:110);
-    EEG_first.reject.rejmanualE = EEG_first.reject.rejmanualE(:, 1:55);
-    EEG_second.reject.rejmanualE = EEG_second.reject.rejmanualE(:, 56:110);
-    EEG_first.reject.rejmanual = EEG_first.reject.rejmanual(:, 1:55);
-    EEG_second.reject.rejmanual = EEG_second.reject.rejmanual(:, 56:110);
-    
-    %Subset fields with indices
-    EEG_first.EVENTLIST.eventinfo = EEG_first.EVENTLIST.eventinfo(1:urevent_half_index);
-    EEG_second.EVENTLIST.eventinfo = EEG_second.EVENTLIST.eventinfo(urevent_after_index:urevent_end_index);
-    EEG_first.event = EEG_first.event(1:event_half_index);
-    EEG_second.event = EEG_second.event(event_after_index:event_end_index);
-    EEG_first.urevent = EEG_first.urevent(1:urevent_half_index);
-    EEG_second.urevent = EEG_second.urevent(urevent_after_index:urevent_end_index);
+    %Save EEG dataset file
+    EEG = pop_saveset(EEG, 'filename',[processfolder subject '_AR.set']);
     
     %Average epochs by bin
-    ERP_first = pop_averager(EEG_first, 'Criterion', 'good', 'DSindex', 1,...
-        'ExcludeBoundary', 'on', 'SEM', 'on');
-    ERP_second = pop_averager(EEG_second, 'Criterion', 'good', 'DSindex', 1,...
+    ERP = pop_averager(EEG, 'Criterion', 'good', 'DSindex', 1,...
         'ExcludeBoundary', 'on', 'SEM', 'on');
     
     %Create channel averages for butterfly plot
-    ERP_first = pop_erpchanoperator(ERP_first, butterfly, 'ErrorMsg', 'popup', 'Warning', 'on');
-    ERP_second = pop_erpchanoperator(ERP_second, butterfly, 'ErrorMsg', 'popup', 'Warning', 'on');
+    ERP = pop_erpchanoperator(ERP, butterfly, 'ErrorMsg', 'popup', 'Warning', 'on');
     
     %Save ERP file
-    ERP_first = pop_savemyerp(ERP_first, 'erpname', subject, 'filename',...
-        [subject '_first.erp'], 'filepath', halffolder);
-    ERP_second = pop_savemyerp(ERP_second, 'erpname', subject, 'filename',...
-        [subject '_second.erp'], 'filepath', halffolder);
+    ERP = pop_savemyerp(ERP, 'erpname', subject, 'filename',...
+        [subject '.erp'], 'filepath', processfolder);
     
 end

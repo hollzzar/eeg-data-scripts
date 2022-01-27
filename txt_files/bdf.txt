@@ -1,0 +1,31 @@
+bin 1
+might_DM
+.{1;2}
+
+bin 2
+might_I
+.{3;4}
+
+bin 3
+could_SM
+.{100}
+
+bin 4
+should_SM
+.{200}
+
+bin 5
+SM
+.{100;200}
+
+bin 6
+could_DM
+.{101}
+
+bin 7
+should_DM
+.{201}
+
+bin 8
+DM
+.{101;201}
